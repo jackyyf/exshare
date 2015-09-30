@@ -11,8 +11,13 @@ class Gallery(models.Model):
     gid = models.IntegerField(primary_key=True)
     token = models.CharField(max_length=12)
 
+    def __str__(self):
+        return 'Gallery #%d[%s]' % (self.gid, self.token)
+
+    def __unicode__(self):
+        return self.__str__()
+
     def get_meta(self):
-        print self.pk
         if not hasattr(self, 'gallerymeta'):
             meta = GalleryMeta()
             try:
@@ -35,7 +40,6 @@ class Gallery(models.Model):
             meta.gallery_id = self.pk
             meta.created_at = timezone.localtime(datetime.fromtimestamp(int(api_resp['posted']), tz=pytz.utc))
             meta.save()
-            # meta.pk = self.pk
             tags = []
             for tag in api_resp['tags']:
                 if ':' in tag:
@@ -45,7 +49,6 @@ class Gallery(models.Model):
 
                 tag, _ = GalleryTag.objects.get_or_create(name=name, namespace=TagNamespace(namespace))
                 tags.append(tag)
-            print self.gallerymeta.pk
             self.gallerymeta.tags.add(*tags)
         return self.gallerymeta
 
@@ -73,10 +76,10 @@ class GalleryTag(models.Model):
     name = models.CharField(max_length=255, db_index=True)
 
     def __str__(self):
-        return self.name if not self.namespace.value else self.namespace.value + ':' + self.name
+        return self.name if not (self.namespace and self.namespace.value) else self.namespace.value + ':' + self.name
 
     def __unicode__(self):
-        return self.name if not self.namespace.value else self.namespace.value + ':' + self.name
+        return self.__str__()
 
 class Category(Enum):
     DOUJINSHI = 'Doujinshi'
@@ -90,7 +93,6 @@ class Category(Enum):
     ASIAN_PORN = 'Asian Porn'
     MISC = 'Misc'
     PRIVATE = 'Private'
-
 
 class GalleryMeta(models.Model):
     gallery = models.OneToOneField(Gallery, primary_key=True)
@@ -108,6 +110,12 @@ class GalleryMeta(models.Model):
     created_at = models.DateTimeField()
     fetched_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return '[%d] %s' % (self.gallery_id, self.title)
+
+    def __unicode__(self):
+        return self.__str__()
 
     def update(self):
         #TODO: Implement update method, with minimal lifetime check.
